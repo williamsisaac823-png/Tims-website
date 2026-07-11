@@ -157,3 +157,17 @@ post-parse loop right after the `DOMParser().parseFromString(...)` call, before
   overflowing the screen edge on category/product pages). Verified via CDP.
 - **v3.2** — fixed broken product images site-wide (the `<image-slot>`/`setAttribute`
   bug described above).
+- **v3.3** — copy fixes: hero headline had `who<br>stands` with no real space between
+  the words (`<br>` forces a line break but never inserts a space character, so on
+  layouts where the break doesn't land there it read as "whostands" jammed together
+  — fixed by adding a real space); removed a trailing ", not just sitting on a quote."
+  clause from the shared "why buy through Tim" paragraph (appears once in source,
+  renders on every machine detail page); fixed a dropped verb ("Jorns conveying
+  solutions" → "Jorns offers conveying solutions"), a wrong word ("retreat the bending
+  beam" → "retract the bending beam" — mechanical term), and a subject-verb mismatch
+  ("Form panels demonstrating compliance" → "Forms panels demonstrating compliance")
+  in the JDB/TBS/SSR product copy; removed the visible "Prototype — any password
+  works." disclosure line from the Home page's embedded dashboard sign-in preview —
+  **note: this only removes the visible text, it does not add real password
+  verification. The sign-in still has no real backend auth check; that's a separate,
+  bigger task before this dashboard should gate anything actually private.**
