@@ -169,6 +169,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     // createElement so they execute, awaiting onload for src scripts to
     // preserve ordering (React before ReactDOM before Babel before text/babel).
     const doc = new DOMParser().parseFromString(template, 'text/html');
+    // DOMParser-created elements never pass through the HTMLImageElement.prototype.src
+    // setter override above, so any <img src="images/..."> baked into the static
+    // template keeps its raw relative path (which doesn't exist as a real file) and
+    // renders as a broken image. Rewrite src attributes here directly against the
+    // already-built resourceMap so every element gets its blob URL regardless of how
+    // it entered the DOM.
+    doc.querySelectorAll('[src]').forEach(function(el) {
+      const k = (el.getAttribute('src') || '').replace(/^\.?\//, '');
+      if (resourceMap[k]) { el.setAttribute('src', resourceMap[k]); return; }
+      // Not every machine has extra angle/feature photos, so some templates
+      // reference an angle-N/feature-N variant that was never included in
+      // this export's asset bundle. Fall back to that product's base/hero
+      // image (same path, minus the /angle-N or /feature-N suffix) instead
+      // of showing a broken image.
+      const variantMatch = k.match(/^(.*)\/(?:angle|feature)-\d+\.[a-zA-Z0-9]+$/);
+      if (variantMatch) {
+        const baseKey = Object.keys(resourceMap).find(function(rk) { return rk.indexOf(variantMatch[1] + '.') === 0; });
+        if (baseKey) el.setAttribute('src', resourceMap[baseKey]);
+      }
+    });
     document.documentElement.replaceWith(doc.documentElement);
     const dead = Array.from(document.scripts);
     for (const old of dead) {
