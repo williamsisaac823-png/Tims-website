@@ -187,3 +187,37 @@ post-parse loop right after the `DOMParser().parseFromString(...)` call, before
   project source itself.** Confirmed the existing `@media (max-width:768px)`
   stylesheet carried over intact, plus this export adds its own FAQ-specific mobile
   CSS (smaller heading, larger accordion tap targets) on top of it.
+- **v3.5** — targeted content/bug fixes on top of v3.4, no fresh Claude Design export
+  this time (edited the existing v3.4 `index.html` directly, so none of the usual
+  regression checklist applied). Changes:
+  - **Fixed the mobile FAQ menu bug**: the hamburger menu's FAQ link was wired to
+    `sc-camel-on-click="{{ mOpenFaq }}"`, but `mOpenFaq` was never defined in the
+    Component's bindings object (every other mobile link — `mGoHome`, `mOpenCatalog`,
+    `mOpenBrands`, `mOpenReviews`, `mOpenContact` — has both a markup reference *and*
+    a bindings-object definition; `mOpenFaq` only had the markup reference). Clicking
+    it silently did nothing. Fixed by adding
+    `mOpenFaq: () => { this.openFaq(); this.closeMenu(); }` next to `mOpenReviews` in
+    the bindings object. Verified with an actual scripted mobile click via Playwright
+    (not just code inspection) that it now navigates to the FAQ page.
+  - Added a 4th hero stat tile ("8 / Years in the field") next to the existing
+    "World-class brands / Machines to spec / Financing decisions" tiles, using the
+    identical tile+divider markup pattern. No prior line stated Tim's personal
+    tenure anywhere on the site (the existing "decades of experience" copy refers to
+    the machine brands' engineering history, not Tim) — this was new content, not a
+    fix, based on Tim's answer (8 years, factory-trained).
+  - Sharpened the financing FAQ answer with the real lender and approval time
+    ("...financed through Quickturn Financial, with approval typically taking about
+    3-4 days...") — previously generic with no lender named.
+  - Removed the 3 fabricated testimonials (Marcus D./Ridgeline Roofing, Sara L./Apex
+    Sheet Metal, Dave R./North Metal Works) from `REVIEWS`, per Isaac: Tim has zero
+    real reviews yet, so fake ones shouldn't be live. `REVIEWS = []` now — both the
+    Home "Trusted on the floor" section and the dedicated Reviews page render their
+    header with zero cards below (no crash, just visually sparse); real testimonials
+    should replace this before the site is shown to real customers.
+  - **Did NOT change** the brand roster (New Tech Machinery, Schechtl, Schlebach,
+    etc. are all real, already-built-out brands with their own pages/logos/products —
+    initially misread one of Tim's answers as a dealer-list correction, caught it by
+    re-reading his actual answer before editing anything, no change needed there).
+  - Also did NOT touch meta titles/descriptions or the Contact page's `LocalBusiness`
+    schema — checked both directly in the file and found them already using the real
+    company name, dealer language, and phone number, not placeholders as assumed.
