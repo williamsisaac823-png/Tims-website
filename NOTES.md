@@ -221,3 +221,27 @@ post-parse loop right after the `DOMParser().parseFromString(...)` call, before
   - Also did NOT touch meta titles/descriptions or the Contact page's `LocalBusiness`
     schema — checked both directly in the file and found them already using the real
     company name, dealer language, and phone number, not placeholders as assumed.
+- **v3.6** — Isaac asked for the 3 fake testimonials back (he'll say when to pull them
+  for real, once Tim has actual reviews) — restored the original `REVIEWS` array
+  exactly as it was in v3.4. Also investigated Dashboard.html's "Customer reviews"
+  editor per Isaac's question ("does saving reviews in the dashboard push out to
+  where the testimonials show on the homepage?"): **no, it does not.**
+  `saveReviews()` in Dashboard.html only does
+  `localStorage.setItem('tw_reviews', JSON.stringify(this.state.reviews))` — that's
+  browser-local storage on whatever device is signed into the dashboard, not a
+  server or database. `index.html` (the real public homepage) never reads that
+  `tw_reviews` key at all — its `REVIEWS` array is a separate hardcoded constant.
+  So even on the same browser/device, editing and "saving" reviews in the dashboard
+  has zero effect on the live public site; Dashboard.html even has its own separate
+  hardcoded `DEFAULTREV` fallback with the same kind of placeholder names. Making
+  this real would need an actual backend (API + database) shared between both pages
+  — bigger, separate task, not done here. Confirmed mobile rendering of the restored
+  testimonials (Reviews page + Home "Trusted on the floor" section) and the v3.5
+  hero stat tile: no overflow/truncation, tile 4 measures identical width to tile 1.
+  Noted one pre-existing (not introduced by v3.5/v3.6) minor legibility quirk: the
+  hero background photo is naturally brighter on the right side, so the 2nd column
+  of hero stats (previously just "Machines to spec", now also "Years in the field")
+  has lower text contrast than the 1st column on mobile — a hero photo/overlay
+  design issue, not a CSS bug (confirmed identical computed color/opacity across all
+  4 tiles). Flagged to Isaac, not fixed, since it predates this session's changes and
+  fixing it well means touching the hero overlay treatment.
