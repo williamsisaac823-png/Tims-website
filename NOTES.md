@@ -171,3 +171,19 @@ post-parse loop right after the `DOMParser().parseFromString(...)` call, before
   **note: this only removes the visible text, it does not add real password
   verification. The sign-in still has no real backend auth check; that's a separate,
   bigger task before this dashboard should gate anything actually private.**
+- **v3.4** — new Home export (`Tim White - Home2.html` from Downloads) adding a
+  standalone FAQ page (nav: Home / Equipment / Brands / Reviews / FAQ / Contact,
+  same position on both desktop and mobile menus), 44 Q&As across 9 categories with
+  FAQPage schema.org JSON-LD for SEO. As expected on every fresh Claude Design
+  export, ALL prior fixes had regressed and were reapplied from scratch: zoom lock,
+  the `Dashboard.dc.html` → `Dashboard.html` link, both image-src patches
+  (`Element.prototype.setAttribute` override + the pre-`replaceWith` static `<img>`
+  cleanup loop — first time both needed inserting fresh into a from-scratch export
+  rather than just re-verifying they survived), and all five v3.3 content fixes
+  (whostands spacing, the quote-copy clause, the three grammar fixes, the prototype
+  disclosure line). **Going forward: treat every fresh export as needing ALL of the
+  above reapplied, not just the structural fixes — the content fixes regress too
+  since they only ever lived in the exported HTML, never in the Claude Design
+  project source itself.** Confirmed the existing `@media (max-width:768px)`
+  stylesheet carried over intact, plus this export adds its own FAQ-specific mobile
+  CSS (smaller heading, larger accordion tap targets) on top of it.
