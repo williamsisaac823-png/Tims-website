@@ -245,3 +245,59 @@ post-parse loop right after the `DOMParser().parseFromString(...)` call, before
   design issue, not a CSS bug (confirmed identical computed color/opacity across all
   4 tiles). Flagged to Isaac, not fixed, since it predates this session's changes and
   fixing it well means touching the hero overlay treatment.
+- **v3.7** — fresh Home export (`tim white 3.html`) and Dashboard export
+  (`time white 33.html`) from Downloads, adding a new Blog page (nav: Home /
+  Equipment / Brands / Reviews / FAQ / Blog / Contact) and a matching "Blog posts"
+  editor in the dashboard. Blog page currently shows a "Coming soon — no articles
+  published yet" empty state; no posts have been written yet.
+  **Found and fixed a new, more serious bug this round**: this Home export's asset
+  bundle was missing all 52 product photos entirely (not a resolvable JS bug —
+  the actual image bytes just weren't in the manifest/`ext_resources` this time,
+  confirmed by testing in a real browser: every `<image-slot src="images/products/...">`
+  came back as a literal 404, because `window.__resources` had no entry for any of
+  those paths). Root-caused by comparing this export's `__bundler/manifest` +
+  `__bundler/ext_resources` against the currently-live index.html's — the live file
+  has 78 asset entries covering every product/brand photo; this export only had 25
+  (fonts + React + a couple of embedded photos). Confirmed with Isaac before
+  proceeding (rather than silently shipping broken images or guessing), then
+  transplanted the missing assets: extracted the 72 needed `{id, uuid}` pairs +
+  their base64 image data from the live index.html's manifest/ext_resources via raw
+  text splicing (no full re-serialization of either 28MB blob), spliced them into
+  the new export's manifest/ext_resources objects, and reverified both blocks are
+  still valid JSON afterward.
+  That transplant alone isn't enough on its own, though — also had to reapply the
+  **two image-fix patches** (this fresh export had neither, unlike some prior
+  exports that at least had one):
+  1. `Element.prototype.setAttribute` override — for `<image-slot src="{{r.img}}">`
+     bindings the app's own template engine sets via `setAttribute` at runtime.
+  2. `HTMLImageElement.prototype.src` **property**-setter override — needed
+     separately because some images (e.g. brand logos on brand detail pages) are
+     set via `React.createElement('img', { src: brand.logo })`, which assigns the
+     JS property directly and never goes through `setAttribute` at all. Pulled the
+     exact working patch for this straight out of the currently-live index.html
+     (it was already there, inserted in a much earlier session, just easy to miss
+     since it's inside the template blob's own `<head>`, not the outer readable
+     boot script — grepping for the literal string `"HTMLImageElement.prototype.src"`
+     won't find it because the minified code writes it as
+     `var proto=HTMLImageElement.prototype; ... getOwnPropertyDescriptor(proto,"src")`,
+     never as one contiguous string).
+  Verified via real Playwright clicks (not just static grep) that both product
+  catalog photos and brand-detail-page logos render as real `blob:` URLs with zero
+  image-related 404s left (only the pre-existing, harmless `{{ x }}`-placeholder
+  and `.image-slots.state.json` 404s remain, which are present on the live site too
+  and are not a regression).
+  Also reapplied the full standard checklist on both files: zoom lock,
+  `Dashboard.dc.html` → `Dashboard.html` and `Home.dc.html` → `index.html` link
+  fixes (the Dashboard file has that fallback link duplicated twice in a
+  try/catch — both needed the fix), all five v3.3 content fixes, the v3.5
+  financing-FAQ specifics and hero years-in-field stat tile, and confirmed
+  `mOpenFaq` (the v3.5 mobile-menu bug) was already correctly bound in this fresh
+  export — no fix needed there this time.
+  Same finding as v3.6 applies to the new **Blog posts** dashboard editor:
+  `saveBlog()` only does `localStorage.setItem('tw_blog_posts', ...)` — the live
+  Blog page doesn't read that key at all, so writing/publishing posts in the
+  dashboard has no effect on the live site yet, exactly like the Reviews editor.
+  Confirmed via Playwright at both desktop and mobile viewports: hero stats (4
+  tiles), mobile FAQ nav click, catalog images, brand detail page, and the Blog
+  page all render correctly with no horizontal overflow on mobile
+  (`document.documentElement.scrollWidth` stayed at exactly the viewport width).
