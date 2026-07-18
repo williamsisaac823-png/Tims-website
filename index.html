@@ -41,6 +41,7 @@
 <style>
   body{margin:0;background:#ffffff;}
   *{box-sizing:border-box;}
+  html{overflow-anchor:none;}
   a{color:inherit;text-decoration:none;}
   ::selection{background:#f0c9a6;}
   .catscroll{scrollbar-width:thin;scrollbar-color:#c9c4bc transparent;}
@@ -2854,7 +2855,18 @@ class Component extends DCLogic {
   ];
 
   catLabel(id) { const c = this.CATS.find(x => x.id === id); return c ? c.label : ''; }
-  top() { try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) {} }
+  top() {
+    // Deferred to the next frame (after setState's re-render commits) and
+    // run twice — otherwise on mobile, images in the new view finish
+    // loading a moment later, shift the page height, and drag the scroll
+    // position back down away from the top.
+    try {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+      });
+    } catch (e) {}
+  }
 
   FAQPAGE = [
     { id: 'general', title: 'General', items: [
