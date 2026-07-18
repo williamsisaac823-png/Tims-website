@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Keep the internal lead dashboard out of search results
+Disallow: /Dashboard.dc.html
+Disallow: /Dashboard.standalone.html
+
+Sitemap: https://williamsisaac823.github.io/Tims-website/sitemap.xml
