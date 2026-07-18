@@ -5,4 +5,4 @@ Allow: /
 Disallow: /Dashboard.dc.html
 Disallow: /Dashboard.standalone.html
 
-Sitemap: https://williamsisaac823.github.io/Tims-website/sitemap.xml
+Sitemap: https://metalfabmachines.com/sitemap.xml
