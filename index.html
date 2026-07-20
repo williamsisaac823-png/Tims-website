@@ -3044,6 +3044,20 @@ class Component extends DCLogic {
     this._syncBlog();
     window.addEventListener('focus', this._syncReviews);
     window.addEventListener('focus', this._syncBlog);
+    // The phone/browser's native Back control only knows about real history
+    // entries. pushNav() below adds one per in-app navigation; this listener
+    // is what actually restores the view when the user goes back to one
+    // (via a hardware/gesture back, not just this site's own Back button).
+    this._onPopState = (e) => {
+      const nav = e.state && e.state.twNav;
+      const h = this.state.hist.slice();
+      h.pop();
+      if (nav) this.setState({ ...nav, hist: h });
+      else this.setState({ view: 'home', hist: [] });
+      this.top();
+      setTimeout(() => this.updateHead(this.state.view), 0);
+    };
+    window.addEventListener('popstate', this._onPopState);
     this._vidWatch = setInterval(() => {
       const v = document.getElementById('hero-bg-video');
       if (v && v.paused) { v.muted = true; try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
@@ -3119,7 +3133,7 @@ class Component extends DCLogic {
   }
   _cfGo(dir) { const stage = document.getElementById('cf-stage'); if (!stage) return; const n = stage.querySelectorAll('.cf-item').length; this.cfIndex = Math.max(0, Math.min(n - 1, (this.cfIndex || 0) + dir)); this._cfLayout(); }
   _cfClick(i, id) { if (i === this.cfIndex) { this.openCategory(id); } else { this.cfIndex = i; this._cfLayout(); } }
-  componentWillUnmount() { if (this._vidWatch) clearInterval(this._vidWatch); if (this._onStorage) window.removeEventListener('storage', this._onStorage); if (this._syncReviews) window.removeEventListener('focus', this._syncReviews); if (this._syncBlog) window.removeEventListener('focus', this._syncBlog); if (this._cfUp) window.removeEventListener('mouseup', this._cfUp); if (this._cfResize) window.removeEventListener('resize', this._cfResize); }
+  componentWillUnmount() { if (this._vidWatch) clearInterval(this._vidWatch); if (this._onStorage) window.removeEventListener('storage', this._onStorage); if (this._syncReviews) window.removeEventListener('focus', this._syncReviews); if (this._syncBlog) window.removeEventListener('focus', this._syncBlog); if (this._onPopState) window.removeEventListener('popstate', this._onPopState); if (this._cfUp) window.removeEventListener('mouseup', this._cfUp); if (this._cfResize) window.removeEventListener('resize', this._cfResize); }
 
   goHome() { this.pushNav({ view: 'home' }); }
   toggleMenu() { this.setState(s => ({ menuOpen: !s.menuOpen })); }
@@ -3142,17 +3156,29 @@ class Component extends DCLogic {
 
   pushNav(partial) {
     const snap = { view: this.state.view, catId: this.state.catId, indId: this.state.indId, brandId: this.state.brandId, machineId: this.state.machineId };
+    const full = { ...snap, ...partial };
     this.setState({ ...partial, hist: [...this.state.hist, snap] });
+    // Adds a real browser-history entry per in-app navigation, so the
+    // phone/browser's native Back control has something to go back TO
+    // instead of leaving the site. _onPopState (componentDidMount) is what
+    // reads this back out when the user actually goes back.
+    try { history.pushState({ twNav: full }, '', location.pathname + location.search); } catch (e) {}
     this.top();
     setTimeout(() => this.updateHead(this.state.view), 0);
   }
   goBack() {
-    const h = this.state.hist.slice();
-    const prev = h.pop();
-    if (prev) { this.setState({ ...prev, hist: h }); }
-    else { this.setState({ view: 'home', hist: [] }); }
-    this.top();
-    setTimeout(() => this.updateHead(this.state.view), 0);
+    // Goes through the real browser history (consuming the entry pushNav
+    // just added) rather than mutating state directly, so this in-app Back
+    // button and the phone's native Back control can never drift out of
+    // sync with each other. _onPopState applies the resulting state change.
+    try { history.back(); } catch (e) {
+      const h = this.state.hist.slice();
+      const prev = h.pop();
+      if (prev) { this.setState({ ...prev, hist: h }); }
+      else { this.setState({ view: 'home', hist: [] }); }
+      this.top();
+      setTimeout(() => this.updateHead(this.state.view), 0);
+    }
   }
 
   onSearchInput(e) { this.setState({ searchQ: e.target.value, searchFocus: true }); }
